@@ -1,0 +1,269 @@
+{
+  "name": "google news to sheet",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "On clicking 'execute'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "a12e562d-eec4-41cb-95b3-c2a6234d4c65"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB?hl=en-US&gl=US&ceid=US%3Aen",
+        "allowUnauthorizedCerts": true,
+        "responseFormat": "string",
+        "options": {}
+      },
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        208,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "ca2b40b9-b1ba-41a0-a42d-6023d3267d91"
+    },
+    {
+      "parameters": {
+        "dataPropertyName": "item",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "title",
+              "cssSelector": "article > a.gPFEn",
+              "returnValue": "attribute",
+              "attribute": "aria-label"
+            },
+            {
+              "key": "url",
+              "cssSelector": "article > a.gPFEn",
+              "returnValue": "attribute",
+              "attribute": "href"
+            },
+            {
+              "key": "Image",
+              "cssSelector": "figure > img",
+              "returnValue": "attribute",
+              "attribute": "src"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Item",
+      "type": "n8n-nodes-base.htmlExtract",
+      "position": [
+        608,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "044fad60-a65d-43c5-b8c4-0549d5c4d62a"
+    },
+    {
+      "parameters": {
+        "extractionValues": {
+          "values": [
+            {
+              "key": "item",
+              "cssSelector": "c-wiz",
+              "returnValue": "html",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Extract Items",
+      "type": "n8n-nodes-base.htmlExtract",
+      "position": [
+        400,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "92cc5f90-7346-4a02-aac7-6136c4d6f65d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b83d12e3-d00d-4e60-8e2c-b6aa17ea4dde",
+              "leftValue": "={{ $json.title != undefined && $json.url != undefined && $json.Image != undefined }}",
+              "rightValue": "[undefined]",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        816,
+        0
+      ],
+      "id": "f0c2d84b-39f3-446a-a741-62e842b382cb",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1MXOjKBH5G5f3LJ0FHfWZ959RN0Efn8fuTEP7068VTO8",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1742362764,
+          "mode": "list",
+          "cachedResultName": "google news sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1MXOjKBH5G5f3LJ0FHfWZ959RN0Efn8fuTEP7068VTO8/edit#gid=1742362764"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "title": "={{ $('Item').item.json.title }}",
+            "url": "={{ $('Item').item.json.url }}",
+            "Image": "={{ $('Item').item.json.Image }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Image",
+              "displayName": "Image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "28e5a473-6d91-4492-9311-72a2ac85b42f",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qFj7GvSOztLG22Bi",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Extract Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On clicking 'execute'": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Items": {
+      "main": [
+        [
+          {
+            "node": "Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Item": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "af7821e5-8e72-4ced-b3fa-c1fa1f213a6c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "173b404ba9b4ecb685d91ce3d92c1fc7303eca307a26a78f0a655bae2863101a"
+  },
+  "id": "I1QBiP4E8I4KfJA6",
+  "tags": []
+}
