@@ -1,0 +1,232 @@
+{
+  "name": "Cv Validator",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e76b2e0e-15c3-401d-835e-3cf4dc7bc9fb",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/said/Downloads/*cv.pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "319b7e4d-8704-47e4-b691-beb14e47f36e",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert career advisor and professional CV reviewer with deep knowledge of international hiring standards, ATS (Applicant Tracking System) optimization, and recruitment best practices.\nYour task: Validate the following CV against modern, professional CV standards.\nEvaluation criteria:\n1. Structure & Formatting:\n   - Clear sections (Contact Info, Summary, Experience, Education, Skills, Certifications)\n   - Consistent formatting (fonts, spacing, bullet points)\n   - Professional tone\n2. Content Quality:\n   - Summary is concise and role-specific\n   - Experience includes measurable achievements (quantified results, action verbs)\n   - Education and certifications are complete and relevant\n   - Skills match target industry standards\n3. ATS Compliance:\n   - Uses relevant keywords for the candidate’s target job\n   - Avoids images, tables, or complex formatting that might break ATS parsing\n4. Grammar & Language:\n   - Correct spelling, grammar, and punctuation\n   - Active voice, professional vocabulary\n5. Length & Readability:\n   - Ideally 1–2 pages (unless justified by seniority)\n   - Easy to scan quickly\n\nOutput your analysis in **valid JSON** with the following format:\n{\n  \"score\": number (0-100),\n  \"strengths\": [list of strengths],\n  \"weaknesses\": [list of weaknesses],\n  \"recommendations\": \"Short paragraph with improvement advice\",\n  \"ats_ready\": boolean\n}\n\nNOTE: Do not include anything outside this JSON.\nHere is the CV : \n {{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "c7277add-e9e6-436a-bc75-d57e3de33e0e",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3-coder:free",
+        "options": {
+          "responseFormat": "text"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        496,
+        208
+      ],
+      "id": "d0851de2-9f91-4313-a9ae-e7a28f41d0f6",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "RHOZmJnUS2e8Gblc",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {
+          "joinPages": true
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "2df21af5-e310-4f32-aa99-b0a74116ca4f",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c2f7472a-d7f8-46e9-bd4d-15973113079f",
+              "name": "ready",
+              "value": "={{ $json.output.replaceAll('```json','').replaceAll('```','').trim().parseJson().ats_ready === false ? 'not ready' : 'ready' }}",
+              "type": "string"
+            },
+            {
+              "id": "c783f4ec-63eb-43b9-9440-7cadcb80279b",
+              "name": "recommendations",
+              "value": "={{ $json.output.replaceAll('```json','').replaceAll('```','').trim().parseJson().recommendations }}",
+              "type": "string"
+            },
+            {
+              "id": "7755e687-e3f8-4a45-b62d-83f368d7350b",
+              "name": "score",
+              "value": "={{ $json.output.replaceAll('```json','').replaceAll('```','').trim().parseJson().score }}",
+              "type": "string"
+            },
+            {
+              "id": "0a268f11-fd20-4908-8fd2-e6a5eefa2140",
+              "name": "strenghts",
+              "value": "={{ $json.output.replaceAll('```json','').replaceAll('```','').trim().parseJson().strengths.join(' - ') }}",
+              "type": "string"
+            },
+            {
+              "id": "7d5b1c79-5863-421b-9c6e-624685e37640",
+              "name": "weaknesses",
+              "value": "={{ $json.output.replaceAll('```json','').replaceAll('```','').trim().parseJson().weaknesses.join(\" - \") }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        976,
+        0
+      ],
+      "id": "08f82561-b382-4f56-b95b-54be3c03404b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "html",
+        "binaryPropertyName": "={{ $json }}",
+        "options": {
+          "fileName": "cv-validator-result",
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "d9e3eee1-e424-4138-afc4-c926613f096a",
+      "name": "Convert to File",
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0c89624a-3ef1-4c56-b6ee-73a7d205b1f1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "173b404ba9b4ecb685d91ce3d92c1fc7303eca307a26a78f0a655bae2863101a"
+  },
+  "id": "cTLGHPODSFZe2roT",
+  "tags": []
+}
